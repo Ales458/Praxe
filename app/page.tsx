@@ -1,53 +1,97 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 export default function Home() {
-  const [data, setData] = useState<unknown>(null);
-  const [error, setError] = useState<string>("");
-  
+  const [items, setItems] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+
   useEffect(() => {
-    async function loadData() {
-      try {
-        const response = await fetch(
-          "/api/zakazky",
-          {
-            method: "GET",
-            headers: {
-              Authorization: "api:",
-              Accept: "application/json",
-            },
-          }
-        );
-        const text = await response.text();
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${text}`);
-        }
-
-        setData(JSON.parse(text));
-      } catch (err) {
-        setError((err instanceof Error ? err.message : "An unknown error occurred"));
-      }
-    }
-
-    loadData();
+    fetch("/api/zakazky")
+      .then((res) => res.json())
+      .then((json) => {
+        setItems(json.data.items);
+      });
   }, []);
 
-  return (
-    <main style= {{ padding: 24 }}>
-      <h1>Otestuji Api</h1>
-      {error && (
-        <>
-          <h2> Chyba</h2>
-          <pre>{error}</pre>
-        </>
-      )}
+  const filteredItems = items.filter((item) => {
+    const rid = item.fieldValues.find((f: any) => f.name === "RID")?.value || "";
+    const doklad = item.fieldValues.find((f: any) => f.name === "DocumentIdentificationCalc")?.value || "";
+    const castka = item.fieldValues.find((f: any) => f.name === "AmountNetC")?.value || "";
+    
+    return `${rid} ${doklad} ${castka}`.toLowerCase().includes(search.toLowerCase());
 
-      {data !== null && (
-        <>
-          <h2> Data z API </h2>
-          <pre>{JSON.stringify(data, null, 2)}</pre>
-        </>
-      )}
+  });
+  return (
+    <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
+      <div className="mx-auto max-w-7xl rounded-lg bg-white shadow">
+        <div className="border-b border-slate-200 px-6 py-4">
+          <h1 className="text-2xl font-semibold">Zakázky Čokoládovny</h1>
+          <p className="text-sm text-slate-500">
+            Výpis dat z K2 API
+          </p>
+      </div>
+
+      <div className="px-6 py-4">
+        <input
+         type="text"
+         placeholder="Hledat podle ID, dokladu nebo částky..."
+         value={search}
+         onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-md border border-slate-300 px-4 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
+      </div>
+
+      <div className="overflow-x-auto">
+
+          <table className="w-full border-collapse text-sm">
+
+            <thead className="bg-slate-200">
+
+              <tr>
+
+                
+                <th className="border border-slate-300 px-4 py-2 text-left">ID</th>
+                <th className="border border-slate-300 px-4 py-2 text-left">Doklad</th>
+                <th className="border border-slate-300 px-4 py-2 text-left">Částka</th>
+              </tr>
+
+            </thead>
+            <tbody>
+              {filteredItems.map((item, index) => {
+                const id = item.fieldValues.find((f: any) => f.name === "RID")?.value;
+                const doklad = item.fieldValues.find(
+                  (f: any) => f.name === "DocumentIdentificationCalc"
+                )?.value;
+                const castka = item.fieldValues.find(
+                  (f: any) => f.name === "AmountNetC"
+                )?.value;
+                return (
+                  <tr
+                    key={index}
+                    className="odd:bg-white even:bg-slate-50 hover:bg-blue-50"
+                  >
+                    <td className="border border-slate-200 px-4 py-2">{id}</td>
+                    <td className="border border-slate-200 px-4 py-2 font-medium">
+                      {doklad}
+                    </td>
+                    <td className="border border-slate-200 px-4 py-2 text-right">
+                      {Number(castka).toLocaleString("cs-CZ")} Kč
+                    </td>
+                    
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="border-t border-slate-200 px-6 py-3 text-sm text-slate-500">
+          Počet záznamů: {items.length}
+        </div>
+      </div>
     </main>
   );
 }
+
+  
+
