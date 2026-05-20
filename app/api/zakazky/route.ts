@@ -17,7 +17,7 @@ export async function GET() {
   const token = loginData.accessToken;
 
   const ordersResponse = await fetch(
-    process.env.K2_BASE_URL + "/Data/TSalesOrderDM?fields=TradingPartnerId,DocumentIdentificationCalc,AmountNetC,Currency&conditions=TradingPartnerId;GE;0&pageSize=1000",
+    process.env.K2_BASE_URL + "/Data/TSalesOrderDM?fields=TradingPartnerId,DocumentIdentificationCalc,AmountNetC,Currency,Description&conditions=TradingPartnerId;GE;0&pageSize=1000",
     {
       method: "GET",
       headers: {
