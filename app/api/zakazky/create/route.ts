@@ -64,6 +64,7 @@ export async function POST(request: Request) {
     );
 
     const text = await k2Response.text();
+    console.log("K2 response:", text);
     return NextResponse.json({
       k2Status: k2Response.status,
       k2Ok: k2Response.ok,

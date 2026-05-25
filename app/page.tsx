@@ -1,8 +1,10 @@
 "use client";
 
-import { get } from "http";
 import { useEffect, useState } from "react";
-//import { PUT } from "./api/zakazky/route";
+import ExportCsvBtn from "./components/ExportCsvBtn";
+import OrderNavigation from "./components/OrderNavigation";
+import ConfirmedLock from "./components/ConfirmedLock";
+
 
 type SortColumn = "firma" | "doklad" | "castka" | "měna" | "popis";
 type SortDirection = "asc" | "desc";
@@ -31,15 +33,17 @@ export default function Home() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
 
-  useEffect(() => {
-    fetch("/api/zakazky", {method: "GET"})
-      .then((res) => res.json())
-      .then((json) => {
-        setItems(json.data.items);
-      });
-  }, []);
-  //fetch("/api/zakazky", {method: "PUT"});
+useEffect(() => {
+  fetch("/api/zakazky")
+    .then((res) => res.json())
+    .then((json) => {
+      const loadedItems = json.data.items;
 
+      setItems(loadedItems);
+      setSelectedItem(loadedItems[0] ?? null); 
+    });
+
+}, []);
 
   const getField = (item: any, fieldName: string) => {
     return item.fieldValues.find((f: any) => f.name === fieldName)?.value;
@@ -97,7 +101,7 @@ export default function Home() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        tradingPartnerId: 20,
+        tradingPartnerId: newFirma,
         doklad: newDoklad,
         castka: newCastka,
         měna: newMěna,
@@ -127,8 +131,7 @@ export default function Home() {
     setShowForm(false);
   };
     
-    
-
+  
   const getSortArrow = (column: SortColumn) => {
     if (sortColumn !== column) return "↕";
     return sortDirection === "asc" ? "↑" : "↓";
@@ -170,20 +173,30 @@ export default function Home() {
       <div className="mx-auto max-w-7xl rounded-lg bg-white shadow">
         <div className="border-b border-slate-200 px-6 py-4">
           <h1 className="text-2xl font-semibold">Zakázky</h1>
-          <p className="text-sm text-slate-500">
-            Výpis dat z K2 API
-          </p>
+          
       </div>
 
       <div className="border-b border-slate-200 px-6 py-4">
   <button
     type="button"
     onClick={() => setShowForm(!showForm)}
-    className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+    className="rounded bg-blue-600 px-1 py-2 text-sm font-medium text-white hover:bg-blue-700"
   >
     Přidat zakázku
   </button>
 
+  <ExportCsvBtn
+    items={sortedItems}
+    getField={getField}
+    getPartnerName={getPartnerName}
+    getCurrency={getCurrency}
+  />
+
+  <OrderNavigation
+    items={sortedItems}
+    selectedItem={selectedItem}
+    setSelectedItem={setSelectedItem}
+    />
   {showForm && (
     <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-5">
       <input
@@ -319,10 +332,13 @@ export default function Home() {
                   item,
                   "DocumentIdentificationCalc"
                 );
+                const confirmed = getField(item, "ConfirmedOrCanceledIdCalc"); 
+                //console.log("confirmed", getField(item, "ConfirmedOrCanceledIdCalc"), confirmed);   
                 const castka = getField(item, "AmountNetC");
                 const měna = getCurrency(item);
                 const popis = getField(item, "Description") ?? "";
                 return (
+                  
                   <tr
                     key={index}
                     className="odd:bg-white even:bg-slate-50 hover:bg-blue-50"
@@ -331,10 +347,13 @@ export default function Home() {
                       {firma}
                     </td>
                     <td className="border border-slate-200 px-4 py-2 font-medium">
-                      {doklad}
+                  <div className="flex items-center gap-2">
+                  <ConfirmedLock value={confirmed} />
+                  <span>{doklad}</span>
+                  </div>
                     </td>
                     <td className="border border-slate-200 px-4 py-2 text-right">
-                      {Number(castka).toLocaleString("cs-CZ")} Kč
+                      {Number(castka).toLocaleString("cs-CZ")} 
                     </td>
                       <td className="border border-slate-200 px-4 py-2">
                       {měna}
