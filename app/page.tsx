@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import ExportCsvBtn from "./components/ExportCsvBtn";
-import OrderNavigation from "./components/OrderNavigation";
 import ConfirmedLock from "./components/ConfirmedLock";
+import OrderNavigation from "./components/OrderNavigation";
+import AddZakazkaForm from "./components/AddZakazkaForm";
+import OrderBasicInfoPanel from "./components/OrderBasicInfoPanel";
 
 
 type SortColumn = "firma" | "doklad" | "castka" | "měna" | "popis";
@@ -14,36 +16,31 @@ export default function Home() {
   const [items, setItems] = useState<any[]>([]);
 
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
-  
+
+  const [selectedindex, setSelectedIndex] = useState<number | null>(null);
+
   const [firmaFilter, setFirmaFilter] = useState("");
   const [dokladFilter, setDokladFilter] = useState("");
   const [castkaFilter, setCastkaFilter] = useState("");
   const [měnaFilter, setMěnaFilter] = useState("");
   const [popisFilter, setPopisFilter] = useState("");
 
-  const [showForm, setShowForm] = useState(false);
-
-  const [newFirma, setNewFirma] = useState("");
-  const [newDoklad, setNewDoklad] = useState("");
-  const [newCastka, setNewCastka] = useState("");
-  const [newMěna, setNewMěna] = useState("CZK");
-  const [newPopis, setNewPopis] = useState("");
 
   const [sortColumn, setSortColumn] = useState<SortColumn>("firma");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
 
-useEffect(() => {
-  fetch("/api/zakazky")
-    .then((res) => res.json())
-    .then((json) => {
-      const loadedItems = json.data.items;
+  useEffect(() => {
+    fetch("/api/zakazky")
+      .then((res) => res.json())
+      .then((json) => {
+        const loadedItems = json.data.items;
 
-      setItems(loadedItems);
-      setSelectedItem(loadedItems[0] ?? null); 
-    });
+        setItems(loadedItems);
+        setSelectedItem(loadedItems[0] ?? null);
+      });
 
-}, []);
+  }, []);
 
   const getField = (item: any, fieldName: string) => {
     return item.fieldValues.find((f: any) => f.name === fieldName)?.value;
@@ -67,7 +64,7 @@ useEffect(() => {
       ""
     );
   };
-    
+
   const filteredItems = items.filter((item) => {
     const firma = getPartnerName(item);
     const doklad = getField(item, "DocumentIdentificationCalc") ?? "";
@@ -76,12 +73,12 @@ useEffect(() => {
     const popis = getField(item, "Description") ?? "";
 
     return (
-      (firma.toLowerCase().includes(firmaFilter.toLowerCase())  &&
-      String(doklad).toLowerCase().includes(dokladFilter.toLowerCase()) &&
-      String(castka).toLowerCase().includes(castkaFilter.toLowerCase()) &&
-      String(měna).toLowerCase().includes(měnaFilter.toLowerCase()) &&
-      String(popis).toLowerCase().includes(popisFilter.toLowerCase())
-    ));
+      (firma.toLowerCase().includes(firmaFilter.toLowerCase()) &&
+        String(doklad).toLowerCase().includes(dokladFilter.toLowerCase()) &&
+        String(castka).toLowerCase().includes(castkaFilter.toLowerCase()) &&
+        String(měna).toLowerCase().includes(měnaFilter.toLowerCase()) &&
+        String(popis).toLowerCase().includes(popisFilter.toLowerCase())
+      ));
   });
 
 
@@ -94,44 +91,8 @@ useEffect(() => {
     }
   };
 
-  const addZakázka = async () => {
-    const response = await fetch("/api/zakazky/create", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        tradingPartnerId: newFirma,
-        doklad: newDoklad,
-        castka: newCastka,
-        měna: newMěna,
-        popis: newPopis,
-      }),
-    });
 
-    if (!response.ok) {
-      console.error(await response.text());
-      alert("Nepodařilo se vytvořit zakázku");
-      return;
-    }
 
-    alert("Zakázka vytvořena");
-
-    const refreshed = await fetch("/api/zakazky");
-    const refreshedJson = await refreshed.json();
-
-    setItems(refreshedJson.data.items);
-
-    setNewFirma("");
-    setNewDoklad("");
-    setNewCastka("");
-    setNewMěna("CZK");
-    setNewPopis("");
-
-    setShowForm(false);
-  };
-    
-  
   const getSortArrow = (column: SortColumn) => {
     if (sortColumn !== column) return "↕";
     return sortDirection === "asc" ? "↑" : "↓";
@@ -173,201 +134,167 @@ useEffect(() => {
       <div className="mx-auto max-w-7xl rounded-lg bg-white shadow">
         <div className="border-b border-slate-200 px-6 py-4">
           <h1 className="text-2xl font-semibold">Zakázky</h1>
-          
-      </div>
 
-      <div className="border-b border-slate-200 px-6 py-4">
-  <button
-    type="button"
-    onClick={() => setShowForm(!showForm)}
-    className="rounded bg-blue-600 px-1 py-2 text-sm font-medium text-white hover:bg-blue-700"
-  >
-    Přidat zakázku
-  </button>
+        </div>
 
-  <ExportCsvBtn
-    items={sortedItems}
-    getField={getField}
-    getPartnerName={getPartnerName}
-    getCurrency={getCurrency}
-  />
+        <div className="flex items-center gap-3">
 
-  <OrderNavigation
-    items={sortedItems}
-    selectedItem={selectedItem}
-    setSelectedItem={setSelectedItem}
-    />
-  {showForm && (
-    <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-5">
-      <input
-        value={newFirma}
-        onChange={(e) => setNewFirma(e.target.value)}
-        placeholder="Firma"
-        className="rounded border border-slate-300 px-3 py-2"
-      />
+          <OrderNavigation
+            items={sortedItems}
+            selectedIndex={selectedindex}
+            setSelctedIndex={setSelectedIndex}
+          />
 
-      <input
-        value={newDoklad}
-        onChange={(e) => setNewDoklad(e.target.value)}
-        placeholder="Doklad"
-        className="rounded border border-slate-300 px-3 py-2"
-      />
 
-      <input
-        value={newCastka}
-        onChange={(e) => setNewCastka(e.target.value)}
-        placeholder="Částka"
-        className="rounded border border-slate-300 px-3 py-2"
-      />
+          <AddZakazkaForm
+            onCreated={async () => {
+              const refreshed = await fetch("/api/zakazky");
+              const refreshedJson = await refreshed.json();
 
-      <input
-        value={newMěna}
-        onChange={(e) => setNewMěna(e.target.value)}
-        placeholder="Měna"
-        className="rounded border border-slate-300 px-3 py-2"
-      />
+              setItems(refreshedJson.data.items);
+            }}
+          />
 
-      <input
-        value={newPopis}
-        onChange={(e) => setNewPopis(e.target.value)}
-        placeholder="Popis"
-        className="rounded border border-slate-300 px-3 py-2"
-      />
 
-      <button
-        type="button"
-        onClick={addZakázka}
-        className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
-      >
-        Uložit zakázku
-      </button>
-    </div>
-  )}
-</div>
+          <ExportCsvBtn
+            items={sortedItems}
+            getField={getField}
+            getPartnerName={getPartnerName}
+            getCurrency={getCurrency}
+          />
 
-      <div className="relative max-h-[70vh] overflow-auto px-6 bg-white">
-          <table className="w-full border-separate border-spacing-0 text-sm">
+        </div>
+        <div className="flex">
+          <div className="relative max-h-[70vh] overflow-auto px-6 bg-white">
+            <table className="w-full border-separate border-spacing-0 text-sm">
 
-            <thead className="sticky top-0 z-50 bg-white">
-              <tr className="bg-white">
-                <th className="border border-slate-300 px-2 py-2">
-                  <input
-                    value={firmaFilter}
-                    onChange={(e) => setFirmaFilter(e.target.value)}
-                    placeholder="Filtrovat firmu"
-                    className="w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-500"
-                  />
-                </th>
-                <th className="border border-slate-300 px-2 py-2">
-                  <input
-                    value={dokladFilter}
-                    onChange={(e) => setDokladFilter(e.target.value)}
-                    placeholder="Filtrovat doklad"
-                    className="w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-500"
-                  />
-                </th>
-
-                <th className="border border-slate-300 px-2 py-2">
-                  <input
-                    value={castkaFilter}
-                    onChange={(e) => setCastkaFilter(e.target.value)}
-                    placeholder="Filtrovat částku"
-                    className="w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-500"
-                  />
-                </th>
-                  
+              <thead className="sticky top-0 z-50 bg-white">
+                <tr className="bg-white">
+                  <th className="border border-slate-300 px-2 py-2">
+                    <input
+                      value={firmaFilter}
+                      onChange={(e) => setFirmaFilter(e.target.value)}
+                      placeholder="Filtrovat firmu"
+                      className="w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-500"
+                    />
+                  </th>
+                  <th className="border border-slate-300 px-2 py-2">
+                    <input
+                      value={dokladFilter}
+                      onChange={(e) => setDokladFilter(e.target.value)}
+                      placeholder="Filtrovat doklad"
+                      className="w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-500"
+                    />
+                  </th>
 
                   <th className="border border-slate-300 px-2 py-2">
-                  <input
-                    value={měnaFilter}
-                    onChange={(e) => setMěnaFilter(e.target.value)}
-                    placeholder="Filtrovat měnu"
-                    className="w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-500"
-                  />
-                </th>
+                    <input
+                      value={castkaFilter}
+                      onChange={(e) => setCastkaFilter(e.target.value)}
+                      placeholder="Filtrovat částku"
+                      className="w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-500"
+                    />
+                  </th>
 
-                
 
-                <th className="border border-slate-300 px-2 py-2">
-                  <input
-                    value={popisFilter}
-                    onChange={(e) => setPopisFilter(e.target.value)}
-                    placeholder="Filtrovat popis"
-                    className="w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-500"
-                  />
-                </th>
+                  <th className="border border-slate-300 px-2 py-2">
+                    <input
+                      value={měnaFilter}
+                      onChange={(e) => setMěnaFilter(e.target.value)}
+                      placeholder="Filtrovat měnu"
+                      className="w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-500"
+                    />
+                  </th>
 
-              </tr>
-              <tr className="bg-slate-200">
-                <th
-                 onClick ={() => handleSort("firma")} className="border border-slate-300 px-4 py-2 text-left cursor-pointer">
-                  Firma {getSortArrow("firma")}
-                </th>
-                <th
-                 onClick ={() => handleSort("doklad")} className="border border-slate-300 px-4 py-2 text-left cursor-pointer">
-                  Doklad {getSortArrow("doklad")}
-                </th>
-                <th
-                 onClick ={() => handleSort("castka")} className="border border-slate-300 px-4 py-2 text-right cursor-pointer">
-                  Částka {getSortArrow("castka")}
-                </th>
+
+
+                  <th className="border border-slate-300 px-2 py-2">
+                    <input
+                      value={popisFilter}
+                      onChange={(e) => setPopisFilter(e.target.value)}
+                      placeholder="Filtrovat popis"
+                      className="w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-500"
+                    />
+                  </th>
+
+                </tr>
+                <tr className="bg-slate-200">
                   <th
-                  onClick={() => handleSort("měna")} className="border border-slate-300 px-4 py-2 text-left cursor-pointer">
+                    onClick={() => handleSort("firma")} className="border border-slate-300 px-4 py-2 text-left cursor-pointer">
+                    Firma {getSortArrow("firma")}
+                  </th>
+                  <th
+                    onClick={() => handleSort("doklad")} className="border border-slate-300 px-4 py-2 text-left cursor-pointer">
+                    Doklad {getSortArrow("doklad")}
+                  </th>
+                  <th
+                    onClick={() => handleSort("castka")} className="border border-slate-300 px-4 py-2 text-right cursor-pointer">
+                    Částka {getSortArrow("castka")}
+                  </th>
+                  <th
+                    onClick={() => handleSort("měna")} className="border border-slate-300 px-4 py-2 text-left cursor-pointer">
                     Měna {getSortArrow("měna")}
-                    </th>
-                  
-                <th
-                 onClick ={() => handleSort("popis")} className="border border-slate-300 px-4 py-2 text-left cursor-pointer">
-                  Popis {getSortArrow("popis")}
-                </th>
-              </tr>
-          
-            </thead>
+                  </th>
 
-           <tbody>
+                  <th
+                    onClick={() => handleSort("popis")} className="border border-slate-300 px-4 py-2 text-left cursor-pointer">
+                    Popis {getSortArrow("popis")}
+                  </th>
+                </tr>
 
-              {sortedItems.map((item, index) => {
-                const firma = getPartnerName(item);
-                const doklad = getField(
-                  item,
-                  "DocumentIdentificationCalc"
-                );
-                const confirmed = getField(item, "ConfirmedOrCanceledIdCalc"); 
-                //console.log("confirmed", getField(item, "ConfirmedOrCanceledIdCalc"), confirmed);   
-                const castka = getField(item, "AmountNetC");
-                const měna = getCurrency(item);
-                const popis = getField(item, "Description") ?? "";
-                return (
-                  
-                  <tr
-                    key={index}
-                    className="odd:bg-white even:bg-slate-50 hover:bg-blue-50"
-                  >
-                    <td className="border border-slate-200 px-4 py-2">
-                      {firma}
-                    </td>
-                    <td className="border border-slate-200 px-4 py-2 font-medium">
-                  <div className="flex items-center gap-2">
-                  <ConfirmedLock value={confirmed} />
-                  <span>{doklad}</span>
-                  </div>
-                    </td>
-                    <td className="border border-slate-200 px-4 py-2 text-right">
-                      {Number(castka).toLocaleString("cs-CZ")} 
-                    </td>
-                      <td className="border border-slate-200 px-4 py-2">
-                      {měna}
-                    </td>
-                    <td className="border border-slate-200 px-4 py-2">
-                      {popis}
-                    </td>
-                  </tr>
-                );
-              })}
+              </thead>
 
-            </tbody>
-          </table>
+              <tbody>
+
+                {sortedItems.map((item, index) => {
+                  const firma = getPartnerName(item);
+                  const doklad = getField(
+                    item,
+                    "DocumentIdentificationCalc"
+                  );
+                  const confirmed = getField(item, "ConfirmedOrCanceledIdCalc");
+                  const castka = getField(item, "AmountNetC");
+                  const měna = getCurrency(item);
+                  const popis = getField(item, "Description") ?? "";
+                  return (
+                    <tr
+                      key={index}
+                      onClick={() => setSelectedIndex(index)}
+                      className={`cursor-pointer ${selectedindex === index
+                        ? "bg-blue-200"
+                        : index % 2 === 0
+                          ? "bg-white"
+                          : "bg-slate-50"
+                        } hover:bg-blue-100`}
+                    >
+                      <td>{firma}</td>
+
+                      <td>
+                        <ConfirmedLock value={confirmed} />
+                        {doklad}
+                      </td>
+
+                      <td>{Number(castka).toLocaleString("cs-CZ")}</td>
+
+                      <td>{měna}</td>
+
+                      <td>{popis}</td>
+                    </tr>
+                  );
+                })}
+
+              </tbody>
+            </table>
+          </div>
+          <OrderBasicInfoPanel
+            selectedItem={selectedindex !== null ? sortedItems[selectedindex] : null}
+            getField={getField}
+            getPartnerName={getPartnerName}
+            getCurrency={getCurrency}
+          />
         </div>
+
+
         <div className="border-t border-slate-200 px-6 py-3 text-sm text-slate-500">
           Počet záznamů: {sortedItems.length}/{items.length}
         </div>
@@ -380,5 +307,5 @@ useEffect(() => {
 
 
 
-  
+
 
