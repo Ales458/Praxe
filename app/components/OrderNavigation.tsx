@@ -11,7 +11,6 @@ export default function OrderNavigation({
     selectedIndex,
     setSelctedIndex,
 }: OrderNavigationProps) {
-
     const buttonCLass = "rounded border border-slate-300 bg-white px-1 py-0.5 text-[11px] leading-4  hover:bg-slate-100"
     const goFirst = () => {
         if (items.length > 0) {

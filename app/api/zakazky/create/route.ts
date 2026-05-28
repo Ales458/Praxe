@@ -1,82 +1,163 @@
+import https from "https";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-    try {
 
-    
+  try {
+    const agent = new https.Agent({
+      rejectUnauthorized: false,
+    });
     const body = await request.json();
-    
-    const LoginResponse = await fetch(process.env.K2_BASE_URL + "/token/login", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
+    const response = await fetch(process.env.K2_BASE_URL_CREATE!, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.K2_TOKEN}`,
+      },
+      body: JSON.stringify({
+        className: "TSalesOrderDM",
+        fieldValues: [
+          {
+            name: "AmountNetC",
+            value: Number(body.castka),
+          },
+          {
+            name: "AmountGrossC",
+            value: Number(body.castka),
+          },
+          {
+            name: "TradingPartnerId",
+            value: {
+              className: "TTradingPartnerDM",
+              fieldValues: [
+                {
+                  name: "Id",
+                  value: Number(body.tradingPartnerId),
+                },
+              ],
+
+            },
+          },
+          {
+            name: "Currency",
+            value: {
+              className: "TCurrencyDM",
+              fieldValues: [
+                {
+                  name: "RID",
+                  value: 539027531,
+                },
+                {
+                  name: "Abbr",
+                  value: "Kč",
+                },
+              ],
+            },
+          },
+          {
+            name: "Description",
+            value: body.popis,
+          },
+          {
+            name: "ShippingMethodId",
+            value: {
+              className: "TShippingMethodDM",
+              fieldValues: [
+                {
+                  name: "Id",
+                  value: 159,
+                },
+              ],
+            },
+          },
+          {
+            name: "CostCentreId",
+            value: {
+              className: "TCostCentreCollectionDocumentDM",
+              fieldValues: [
+                {
+                  name: "Id",
+                  value: 131,
+                },
+              ],
+            },
+          },
+          {
+            name: "BusinessYearId",
+            value: {
+              className: "TBusinessYearDM",
+              fieldValues: [
+                {
+                  name: "Id",
+                  value: 126,
+                },
+              ],
+            },
+          },
+          {
+            name: "TransportMethodRID",
+            value: {
+              className: "TTransportMethodDM",
+              fieldValues: [
+                {
+                  name: "RID",
+                  value: 34,
+                },
+              ],
+            },
+          },
+          {
+            name: "ContractCodeRID",
+            value: {
+              className: "TContractCodeDocumentDM",
+              fieldValues: [
+                {
+                  name: "RID",
+                  value: 1,
+                },
+              ],
+            },
+          },
+          {
+            name: "OrderForm",
+            value: {
+              className: "FormOfOrder",
+              fieldValues: [
+                {
+                  name: "Id",
+                  value: 26,
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    })
+    const text = await response.text();
+    if (!response.ok) {
+      return NextResponse.json(
+        {
+          error: "K2 create zakázky selhal",
+          status: response.status,
+          response: text,
         },
-        body: JSON.stringify({
-            username: process.env.K2_USERNAME,
-            password: process.env.K2_PASSWORD,
-        }),
-    });
-
-
-    const loginData = await LoginResponse.json();
-
-    const token = loginData.accessToken;
-
-    const k2Response = await fetch(
-      "https://k2demo.abis.cz:55302/V25K2_API_DEMO/Data/TSalesOrderDM",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `bearer ${token}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-
-        body: JSON.stringify({
-          className: "TSalesOrderDM",
-          fieldValues: [
-            {
-              name: "TradingPartnerId",
-              value: {
-                className: "TTradingPartnerDM",
-                fieldValues: [
-                  {
-                    name: "Id",
-                    value: Number(body.tradingPartnerId),
-                  },
-                ],
-              },
-            },
-            {
-              name: "Description",
-              value: body.popis,
-            },
-            {
-              name: "AmountNetC",
-              value: Number(body.castka),
-            },
-            {name: "ConfirmationCanceledIdCalc", value: "multiConfirmed_green"},
-            
-          ],
-        }),
-      }
-    );
-
-    const text = await k2Response.text();
-    console.log("K2 response:", text);
+        { status: 500 }
+      );
+    }
     return NextResponse.json({
-      k2Status: k2Response.status,
-      k2Ok: k2Response.ok,
-      k2Response: text,
+      ok: true,
+      response: text,
     });
-  } catch (err) {
+  } catch (error) {
+
     return NextResponse.json(
       {
-        error: "create route spadla",
-        detail: err instanceof Error ? err.message : String(err),
+        error: "Serverová chyba",
+        detail: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
   }
 }
+
+

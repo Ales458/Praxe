@@ -129,6 +129,36 @@ export default function Home() {
     return sortDirection === "asc" ? result : -result;
   });
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (sortedItems.length === 0) return;
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+
+        setSelectedIndex((current) => {
+          if (current === null) return 0;
+          return Math.min(current + 1, sortedItems.length - 1);
+        });
+      }
+
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+
+        setSelectedIndex((current) => {
+          if (current === null) return 0;
+          return Math.max(current - 1, 0);
+        });
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [sortedItems.length]);
+
   return (
     <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
       <div className="mx-auto max-w-7xl rounded-lg bg-white shadow">

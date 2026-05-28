@@ -21,7 +21,14 @@ export default function AddZakazkaForm({
     const [mena, setMena] = useState("Kč");
     const [popis, setPopis] = useState("");
     const addZakazka = async () => {
-
+        console.log(JSON.stringify({
+            tradingPartnerId: 20,
+            firma,
+            doklad,
+            castka,
+            mena,
+            popis,
+        }));
         const response = await fetch("/api/zakazky/create", {
             method: "POST",
             headers: {
@@ -29,6 +36,7 @@ export default function AddZakazkaForm({
             },
 
             body: JSON.stringify({
+                tradingPartnerId: 20,
                 firma,
                 doklad,
                 castka,
