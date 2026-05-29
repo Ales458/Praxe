@@ -5,26 +5,33 @@ export async function POST(request: Request) {
 
   try {
     const agent = new https.Agent({
-      rejectUnauthorized: false,
+      rejectUnauthorized: false
+    })
+    const loginResponse = await fetch(process.env.K2_BASE_URL + "/token/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        username: process.env.K2_USERNAME,
+        password: process.env.K2_PASSWORD,
+      }),
     });
+    console.log("sem tady");
+    const loginData = await loginResponse.json();
+    const token = loginData.accessToken;
     const body = await request.json();
     const response = await fetch(process.env.K2_BASE_URL_CREATE!, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.K2_TOKEN}`,
+        Authorization: `bearer ${token}`,
       },
       body: JSON.stringify({
         className: "TSalesOrderDM",
         fieldValues: [
-          {
-            name: "AmountNetC",
-            value: Number(body.castka),
-          },
-          {
-            name: "AmountGrossC",
-            value: Number(body.castka),
-          },
+
           {
             name: "TradingPartnerId",
             value: {
